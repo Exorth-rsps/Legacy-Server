@@ -7,7 +7,7 @@ import org.alter.game.model.entity.Npc
  */
 class NpcInfo(var npc: Npc) {
     var avatar = npc.avatar
-    private val info = avatar.extendedInfo
+    private val info = NpcExtendedInfoBridge(npc, avatar.extendedInfo)
 
     fun walk(x: Int, y: Int) {
         avatar.walk(x, y)
@@ -104,7 +104,17 @@ class NpcInfo(var npc: Npc) {
         z: Int,
         instant: Boolean = false,
     ) {
-        info.setFaceCoord(x, z, instant)
+        info.setFaceCoord(x, z, 1, 1, instant)
+    }
+
+    fun setFaceCoord(
+        x: Int,
+        z: Int,
+        width: Int,
+        length: Int,
+        instant: Boolean = false,
+    ) {
+        info.setFaceCoord(x, z, width, length, instant)
     }
 
     fun setFacePathingEntity(index: Int) {

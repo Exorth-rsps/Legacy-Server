@@ -466,7 +466,7 @@ abstract class Pawn(val world: World) : Entity() {
         if (entityType.isPlayer) {
             PlayerInfo(this as Player).setFaceCoord(face, width, length)
         } else if (entityType.isNpc) {
-            NpcInfo(this as Npc).setFaceCoord(face.x, face.z, instant)
+            NpcInfo(this as Npc).setFaceCoord(face.x, face.z, width, length, instant)
         }
     }
 
