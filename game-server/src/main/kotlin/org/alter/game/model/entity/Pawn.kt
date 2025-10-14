@@ -308,13 +308,14 @@ abstract class Pawn(val world: World) : Entity() {
                         )
                     } else if (entityType.isPlayer) {
                         val player = this as Player
-                        player.avatar.extendedInfo.addHitMark(
+                        val info = PlayerInfo(player)
+                        info.addHitMark(
                             sourceIndex = hitmark.attackerIndex,
                             selfType = hitmark.type,
                             value = hitmark.damage,
                             delay = hit.clientDelay,
                         )
-                        player.avatar.extendedInfo.addHeadBar(
+                        info.addHeadBar(
                             sourceIndex = hitmark.attackerIndex,
                             selfType = 0,
                             startFill = calculateFill(

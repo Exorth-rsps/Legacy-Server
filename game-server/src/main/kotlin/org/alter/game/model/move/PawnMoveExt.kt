@@ -2,6 +2,7 @@ package org.alter.game.model.move
 
 import net.rsprot.protocol.game.outgoing.misc.player.SetMapFlag
 import org.alter.game.info.NpcInfo
+import org.alter.game.info.PlayerInfo
 import org.alter.game.model.Tile
 import org.alter.game.model.attr.CLIENT_KEY_COMBINATION
 import org.alter.game.model.entity.*
@@ -25,7 +26,7 @@ fun Pawn.moveTo(
     if (entityType.isNpc) {
         NpcInfo(this as Npc).teleport(height, x, y, true)
     } else if (entityType.isPlayer) {
-        (this as Player).avatar.extendedInfo.setTempMoveSpeed(127)
+        PlayerInfo(this as Player).setTempMoveSpeed(127)
     }
 }
 

@@ -23,7 +23,7 @@ class NpcInfo(var npc: Npc) {
     }
 
     fun setInaccessible(state: Boolean) {
-        avatar.setInaccessible(state)
+        info.setInaccessible(state)
     }
 
     fun addHeadBar(

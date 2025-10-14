@@ -19,6 +19,7 @@ import net.rsprot.protocol.game.outgoing.sound.SynthSound
 import net.rsprot.protocol.game.outgoing.varp.VarpLarge
 import net.rsprot.protocol.game.outgoing.varp.VarpSmall
 import net.rsprot.protocol.message.OutgoingGameMessage
+import org.alter.game.info.PlayerInfo as PlayerInfoBridge
 import org.alter.game.model.*
 import org.alter.game.model.appearance.Appearance
 import org.alter.game.model.attr.CURRENT_SHOP_ATTR
@@ -199,19 +200,11 @@ open class Player(world: World) : Pawn(world) {
         height: Int,
         delay: Int,
     ) {
-        avatar.extendedInfo.setSpotAnim(0, id, delay, height)
+        PlayerInfoBridge(this).graphic(id, height, delay)
     }
 
     fun forceMove(movement: ForcedMovement) {
-        avatar.extendedInfo.setExactMove(
-            deltaX1 = movement.diffX1,
-            deltaZ1 = movement.diffZ1,
-            delay1 = movement.clientDuration1,
-            deltaX2 = movement.diffX2,
-            deltaZ2 = movement.diffZ2,
-            delay2 = movement.clientDuration2,
-            angle = movement.directionAngle,
-        )
+        PlayerInfoBridge(this).forceMove(movement)
     }
 
     suspend fun forceMove(

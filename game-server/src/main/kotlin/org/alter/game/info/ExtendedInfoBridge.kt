@@ -3,6 +3,7 @@ package org.alter.game.info
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.alter.game.model.Tile
 import org.alter.game.model.entity.Npc
+import org.alter.game.model.entity.Player
 import kotlin.math.atan2
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -14,6 +15,31 @@ internal abstract class ExtendedInfoBridge(private val extendedInfo: Any) {
         extendedInfo.javaClass.methods.groupBy { it.name }
 
     protected fun methods(name: String): List<java.lang.reflect.Method> = methodMap[name].orEmpty()
+
+    protected fun invokeWithSubset(
+        name: String,
+        values: Array<Any?>,
+        logFailure: Boolean = true,
+    ): Boolean =
+        invokeMatching(name, logFailure = logFailure) { method ->
+            val subset = values.copyOf(method.parameterCount)
+            convertArgs(method.parameterTypes, subset)
+        }
+
+    protected fun invokeAny(
+        names: Array<String>,
+        vararg values: Any?,
+        logFailure: Boolean = true,
+    ): Boolean {
+        val base = values.copyOf(values.size)
+        for ((index, candidate) in names.withIndex()) {
+            val shouldLog = logFailure && index == names.lastIndex
+            if (invokeWithSubset(candidate, base.copyOf(base.size), logFailure = shouldLog)) {
+                return true
+            }
+        }
+        return false
+    }
 
     protected fun invokeMatching(
         name: String,
@@ -89,6 +115,12 @@ internal abstract class ExtendedInfoBridge(private val extendedInfo: Any) {
 
             parameterType == java.lang.String::class.java -> value.toString()
 
+            CharSequence::class.java.isAssignableFrom(parameterType) -> value.toString()
+
+            parameterType.isArray && parameterType.componentType == java.lang.Byte.TYPE && value is ByteArray -> value
+
+            parameterType.name == "java.nio.ByteBuffer" && value is ByteArray -> java.nio.ByteBuffer.wrap(value)
+
             parameterType.isEnum -> {
                 val stringValue = when (value) {
                     is Enum<*> -> value.name
@@ -117,15 +149,11 @@ internal abstract class ExtendedInfoBridge(private val extendedInfo: Any) {
 
 internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : ExtendedInfoBridge(extendedInfo) {
     fun setSpotAnim(slot: Int, id: Int, delay: Int, height: Int) {
-        invokeMatching("setSpotAnim") { method ->
-            convertArgs(method.parameterTypes, arrayOf(slot, id, delay, height))
-        }
+        invokeAny(arrayOf("setSpotAnim", "setSpotAnimation"), slot, id, delay, height)
     }
 
     fun setInaccessible(state: Boolean) {
-        invokeMatching("setInaccessible") { method ->
-            convertArgs(method.parameterTypes, arrayOf(state))
-        }
+        invokeAny(arrayOf("setInaccessible", "setBlocking", "setInteractable"), state)
     }
 
     fun addHeadBar(
@@ -137,7 +165,7 @@ internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : 
         startTime: Int,
         endTime: Int,
     ) {
-        val values = arrayOf(sourceIndex, selfType, otherType, startFill, endFill, startTime, endTime)
+        val values = arrayOf<Any?>(sourceIndex, selfType, otherType, startFill, endFill, startTime, endTime)
         invokeMatching("addHeadBar") { method ->
             val params = method.parameterTypes
             val subset = values.copyOf(params.size)
@@ -152,7 +180,7 @@ internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : 
         value: Int,
         delay: Int,
     ) {
-        val values = arrayOf(sourceIndex, selfType, otherType, value, delay)
+        val values = arrayOf<Any?>(sourceIndex, selfType, otherType, value, delay)
         invokeMatching("addHitMark") { method ->
             val params = method.parameterTypes
             val subset = values.copyOf(params.size)
@@ -161,9 +189,7 @@ internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : 
     }
 
     fun setSequence(id: Int, delay: Int) {
-        invokeMatching("setSequence") { method ->
-            convertArgs(method.parameterTypes, arrayOf(id, delay))
-        }
+        invokeAny(arrayOf("setSequence", "setAnimation", "playSequence"), id, delay)
     }
 
     fun setTinting(
@@ -174,27 +200,27 @@ internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : 
         lightness: Int,
         weight: Int,
     ) {
-        invokeMatching("setTinting") { method ->
-            convertArgs(method.parameterTypes, arrayOf(startTime, endTime, hue, saturation, lightness, weight))
-        }
+        invokeAny(
+            arrayOf("setTinting", "tinting", "setColourOverlay"),
+            startTime,
+            endTime,
+            hue,
+            saturation,
+            lightness,
+            weight,
+        )
     }
 
     fun setCombatLevelChange(level: Int) {
-        invokeMatching("setCombatLevelChange") { method ->
-            convertArgs(method.parameterTypes, arrayOf(level))
-        }
+        invokeAny(arrayOf("setCombatLevelChange", "setCombatLevel"), level)
     }
 
     fun setNameChange(name: String) {
-        invokeMatching("setNameChange") { method ->
-            convertArgs(method.parameterTypes, arrayOf(name))
-        }
+        invokeAny(arrayOf("setNameChange", "setName", "setDisplayName"), name)
     }
 
     fun setSay(message: String) {
-        invokeMatching("setSay") { method ->
-            convertArgs(method.parameterTypes, arrayOf(message))
-        }
+        invokeAny(arrayOf("setSay", "setForceChat", "setChatMessage"), message)
     }
 
     fun setFaceCoord(
@@ -223,17 +249,15 @@ internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : 
     }
 
     fun setFacePathingEntity(index: Int) {
-        invokeMatching("setFacePathingEntity") { method ->
-            convertArgs(method.parameterTypes, arrayOf(index))
-        }
+        invokeAny(arrayOf("setFacePathingEntity", "setFaceEntity", "setFaceIndex"), index)
     }
 
     fun setAllOpsInvisible() {
-        invokeMatching("setAllOpsInvisible") { emptyArray<Any?>() }
+        invokeAny(arrayOf("setAllOpsInvisible", "hideAllOps"))
     }
 
     fun setAllOpsVisible() {
-        invokeMatching("setAllOpsVisible") { emptyArray<Any?>() }
+        invokeAny(arrayOf("setAllOpsVisible", "showAllOps"))
     }
 
     private fun buildFaceCoordArguments(
@@ -371,5 +395,201 @@ internal class NpcExtendedInfoBridge(private val npc: Npc, extendedInfo: Any) : 
     private fun isBoolean(type: Class<*>): Boolean {
         val wrapper = toWrapper(type)
         return wrapper == java.lang.Boolean::class.java
+    }
+}
+
+internal class PlayerExtendedInfoBridge(private val player: Player, extendedInfo: Any) : ExtendedInfoBridge(extendedInfo) {
+    fun setIdentKit(slot: Int, look: Int) {
+        invokeAny(arrayOf("setIdentKit", "setKit"), slot, look)
+    }
+
+    fun setWornObj(slot: Int, id: Int, override1: Int, override2: Int) {
+        invokeAny(
+            arrayOf("setWornObj", "setWornItem", "setEquipment"),
+            slot,
+            id,
+            override1,
+            override2,
+        )
+    }
+
+    fun setBaseAnimationSet(
+        readyAnim: Int,
+        turnAnim: Int,
+        walkAnim: Int,
+        walkAnimBack: Int,
+        walkAnimLeft: Int,
+        walkAnimRight: Int,
+        runAnim: Int,
+    ) {
+        invokeAny(
+            arrayOf("setBaseAnimationSet", "setAnimationSet", "setBaseAnimations"),
+            readyAnim,
+            turnAnim,
+            walkAnim,
+            walkAnimBack,
+            walkAnimLeft,
+            walkAnimRight,
+            runAnim,
+        )
+    }
+
+    fun setColour(slot: Int, colour: Int) {
+        invokeAny(arrayOf("setColour", "setColor"), slot, colour)
+    }
+
+    fun setName(name: String) {
+        invokeAny(arrayOf("setName", "setDisplayName", "setUsername"), name)
+    }
+
+    fun setCombatLevel(level: Int) {
+        invokeAny(arrayOf("setCombatLevel", "setCombat"), level)
+    }
+
+    fun setMale(isMale: Boolean) {
+        invokeAny(arrayOf("setMale", "setIsMale"), isMale)
+    }
+
+    fun setOverheadIcon(icon: Int) {
+        invokeAny(arrayOf("setOverheadIcon", "setPrayerIcon", "setOverheadPrayer"), icon)
+    }
+
+    fun setSkullIcon(icon: Int) {
+        invokeAny(arrayOf("setSkullIcon", "setHeadIconPk", "setPkIcon"), icon)
+    }
+
+    fun transformToNpc(id: Int) {
+        invokeAny(arrayOf("transformToNpc", "setNpcTransform", "transformNpc"), id)
+    }
+
+    fun setHidden(hidden: Boolean) {
+        invokeAny(arrayOf("setHidden", "setInvisible", "setHiddenFlag"), hidden)
+    }
+
+    fun setSequence(id: Int, delay: Int) {
+        invokeAny(arrayOf("setSequence", "playSequence", "setAnimation"), id, delay)
+    }
+
+    fun tinting(
+        startTime: Int,
+        endTime: Int,
+        hue: Int,
+        saturation: Int,
+        lightness: Int,
+        weight: Int,
+    ) {
+        invokeAny(
+            arrayOf("tinting", "setTinting", "setColourOverlay"),
+            startTime,
+            endTime,
+            hue,
+            saturation,
+            lightness,
+            weight,
+        )
+    }
+
+    fun setSay(message: String) {
+        invokeAny(arrayOf("setSay", "setForceChat", "setChatMessage"), message)
+    }
+
+    fun setFaceAngle(angle: Int) {
+        invokeAny(arrayOf("setFaceAngle", "setFaceYaw", "setOrientation"), angle)
+    }
+
+    fun setFacePathingEntity(index: Int) {
+        invokeAny(arrayOf("setFacePathingEntity", "setFaceEntity", "setFaceIndex"), index)
+    }
+
+    fun setSpotAnim(slot: Int, id: Int, delay: Int, height: Int) {
+        invokeAny(arrayOf("setSpotAnim", "setSpotAnimation", "addSpotAnimation"), slot, id, delay, height)
+    }
+
+    fun setExactMove(
+        deltaX1: Int,
+        deltaZ1: Int,
+        delay1: Int,
+        deltaX2: Int,
+        deltaZ2: Int,
+        delay2: Int,
+        angle: Int,
+    ) {
+        invokeAny(
+            arrayOf("setExactMove", "setForceMove", "setForcedMovement"),
+            deltaX1,
+            deltaZ1,
+            delay1,
+            deltaX2,
+            deltaZ2,
+            delay2,
+            angle,
+        )
+    }
+
+    fun setMoveSpeed(speed: Int) {
+        invokeAny(arrayOf("setMoveSpeed", "setMovementSpeed", "setRunSpeed"), speed)
+    }
+
+    fun addHitMark(
+        sourceIndex: Int,
+        selfType: Int,
+        otherType: Int,
+        value: Int,
+        delay: Int,
+    ) {
+        val values = arrayOf<Any?>(sourceIndex, selfType, otherType, value, delay)
+        invokeMatching("addHitMark") { method ->
+            val params = method.parameterTypes
+            val subset = values.copyOf(params.size)
+            convertArgs(params, subset)
+        }
+    }
+
+    fun addHeadBar(
+        sourceIndex: Int,
+        selfType: Int,
+        otherType: Int,
+        startFill: Int,
+        endFill: Int,
+        startTime: Int,
+        endTime: Int,
+    ) {
+        val values = arrayOf<Any?>(sourceIndex, selfType, otherType, startFill, endFill, startTime, endTime)
+        invokeMatching("addHeadBar") { method ->
+            val params = method.parameterTypes
+            val subset = values.copyOf(params.size)
+            convertArgs(params, subset)
+        }
+    }
+
+    fun setChat(
+        colour: Int,
+        effect: Int,
+        icon: Int,
+        auto: Boolean,
+        message: String,
+        pattern: ByteArray?,
+    ) {
+        val names = arrayOf("setChat", "setChatMessage", "setPublicChat")
+        for ((index, name) in names.withIndex()) {
+            val shouldLog = index == names.lastIndex
+            if (
+                invokeMatching(name, logFailure = shouldLog) { method ->
+                    val params = method.parameterTypes
+                    val requested = when (params.size) {
+                        4 -> arrayOf<Any?>(colour, effect, icon, auto)
+                        5 -> arrayOf<Any?>(colour, effect, icon, auto, message)
+                        else -> arrayOf<Any?>(colour, effect, icon, auto, message, pattern)
+                    }
+                    convertArgs(params, requested)
+                }
+            ) {
+                return
+            }
+        }
+    }
+
+    fun setTempMoveSpeed(speed: Int) {
+        invokeAny(arrayOf("setTempMoveSpeed", "setTemporaryMoveSpeed", "setTempMovementSpeed"), speed)
     }
 }

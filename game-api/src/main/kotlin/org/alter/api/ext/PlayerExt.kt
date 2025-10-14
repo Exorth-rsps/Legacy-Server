@@ -26,6 +26,7 @@ import org.alter.game.model.bits.StorageBits
 import org.alter.game.model.container.ItemContainer
 import org.alter.game.model.entity.Entity
 import org.alter.game.model.entity.Pawn
+import org.alter.game.info.PlayerInfo
 import org.alter.game.model.entity.Player
 import org.alter.game.model.interf.DisplayMode
 import org.alter.game.model.item.Item
@@ -797,7 +798,7 @@ fun Player.hasEquipped(items: Array<String>) = items.map {getRSCM(it)}.all { equ
 fun Player.getEquipment(slot: EquipmentType): Item? = equipment[slot.id]
 
 fun Player.setSkullIcon(icon: SkullIcon) {
-    avatar.extendedInfo.setSkullIcon(icon.id)
+    PlayerInfo(this).setSkullIcon(icon.id)
 }
 
 fun Player.skull(
@@ -875,7 +876,7 @@ fun Player.calculateAndSetCombatLevel(): Boolean {
     runClientScript(CommonClientScripts.COMABT_LEVEL_SUMMARY, 46661634, 46661635, combatLevel)
     if (changed) {
         sendCombatLevelText()
-        avatar.extendedInfo.setCombatLevel(combatLevel)
+        PlayerInfo(this).setCombatLevel(combatLevel)
         return true
     }
 

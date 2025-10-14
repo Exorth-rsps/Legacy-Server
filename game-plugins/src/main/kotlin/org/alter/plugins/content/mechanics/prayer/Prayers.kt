@@ -5,6 +5,7 @@ import org.alter.api.InterfaceDestination
 import org.alter.api.PrayerIcon
 import org.alter.api.Skills
 import org.alter.api.ext.*
+import org.alter.game.info.PlayerInfo
 import org.alter.game.model.attr.AttributeKey
 import org.alter.game.model.attr.PROTECT_ITEM_ATTR
 import org.alter.game.model.bits.INFINITE_VARS_STORAGE
@@ -46,7 +47,7 @@ object Prayers {
 
         if (p.prayerIcon != -1) {
             p.prayerIcon = -1
-            p.avatar.extendedInfo.setOverheadIcon(-1)
+            PlayerInfo(p).setOverheadIcon(-1)
         }
     }
 
@@ -297,7 +298,7 @@ object Prayers {
 
         if (p.prayerIcon != icon.id) {
             p.prayerIcon = icon.id
-            p.avatar.extendedInfo.setOverheadIcon(icon.id)
+            PlayerInfo(p).setOverheadIcon(icon.id)
         }
     }
 

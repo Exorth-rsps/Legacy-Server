@@ -9,7 +9,7 @@ import org.alter.game.model.entity.Player
 import org.alter.game.model.move.MovementType
 
 class PlayerInfo(var player: Player) {
-    val info = player.playerInfo.avatar.extendedInfo
+    private val info = PlayerExtendedInfoBridge(player, player.playerInfo.avatar.extendedInfo)
 
     val DEFAULT_ANIM_SET = AnimationSet(readyAnim = 808, turnAnim = 823, walkAnim = 819, walkAnimBack = 820, walkAnimLeft = 821, walkAnimRight = 822, runAnim = 824)
     var animSequance = DEFAULT_ANIM_SET
@@ -96,7 +96,7 @@ class PlayerInfo(var player: Player) {
         )
     }
 
-    fun setSay(message:String) {
+    fun setSay(message: String) {
         info.setSay(message)
     }
 
@@ -138,5 +138,54 @@ class PlayerInfo(var player: Player) {
 
     fun setMoveSpeed(movementType: MovementType) {
         info.setMoveSpeed(movementType.value)
+    }
+
+    fun setCombatLevel(level: Int) {
+        info.setCombatLevel(level)
+    }
+
+    fun setOverheadIcon(icon: Int) {
+        info.setOverheadIcon(icon)
+    }
+
+    fun setSkullIcon(icon: Int) {
+        info.setSkullIcon(icon)
+    }
+
+    fun addHitMark(
+        sourceIndex: Int,
+        selfType: Int,
+        otherType: Int = selfType,
+        value: Int,
+        delay: Int = 0,
+    ) {
+        info.addHitMark(sourceIndex, selfType, otherType, value, delay)
+    }
+
+    fun addHeadBar(
+        sourceIndex: Int,
+        selfType: Int,
+        otherType: Int = selfType,
+        startFill: Int,
+        endFill: Int = startFill,
+        startTime: Int = 0,
+        endTime: Int = 0,
+    ) {
+        info.addHeadBar(sourceIndex, selfType, otherType, startFill, endFill, startTime, endTime)
+    }
+
+    fun setChat(
+        colour: Int,
+        effect: Int,
+        icon: Int,
+        auto: Boolean,
+        message: String,
+        pattern: ByteArray?,
+    ) {
+        info.setChat(colour, effect, icon, auto, message, pattern)
+    }
+
+    fun setTempMoveSpeed(speed: Int) {
+        info.setTempMoveSpeed(speed)
     }
 }
